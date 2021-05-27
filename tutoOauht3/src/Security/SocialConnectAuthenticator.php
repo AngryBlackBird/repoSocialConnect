@@ -4,6 +4,7 @@
 namespace App\Security;
 
 
+use App\Controller\SecurityController;
 use App\Repository\UserRepository;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use KnpU\OAuth2ClientBundle\Client\OAuth2Client;
@@ -31,13 +32,18 @@ class SocialConnectAuthenticator extends SocialAuthenticator
     private $router;
     private $clientRegistry;
     private $userRepository;
+    private $controller;
+
+
     private $service;
 
-    public function __construct(RouterInterface $router, ClientRegistry $clientRegistry, UserRepository $userRepository)
+
+    public function __construct(RouterInterface $router, ClientRegistry $clientRegistry, UserRepository $userRepository,SecurityController $controller)
     {
         $this->router = $router;
         $this->clientRegistry = $clientRegistry;
         $this->userRepository = $userRepository;
+        $this->controller = $controller;
     }
 
     public function start(Request $request, AuthenticationException $authException = null)
@@ -61,10 +67,9 @@ class SocialConnectAuthenticator extends SocialAuthenticator
      */
     public function getUser($credentials, UserProviderInterface $userProvider)
     {
-        ///** @var GenericResourceOwner $user */
-        //$user = $this->getClient()->fetchUserFromToken($credentials);
-        dd($credentials);
-       // return $this->userRepository->findOrCreateFromGithubOauth($user);
+        /** @var GenericResourceOwner $user */
+        $user = $this->getClient()->fetchUserFromToken($credentials);
+        return $this->userRepository->findOrCreateFromOauth($user, $this->service);
     }
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
@@ -74,7 +79,8 @@ class SocialConnectAuthenticator extends SocialAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $providerKey)
     {
-        // TODO: Implement onAuthenticationSuccess() method.
+        $targetPath = $this->getTargetPath($request->getSession(), $providerKey);
+        return new RedirectResponse($targetPath ?: '/');
     }
 
 

@@ -39,6 +39,17 @@ class User implements UserInterface
      */
     private $githubId;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $googleId;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $facebookId;
+
+
     public function getId(): ?int
     {
         return $this->id;
@@ -128,6 +139,28 @@ class User implements UserInterface
     public function setGithubId(?string $githubId): self
     {
         $this->githubId = $githubId;
+
+        return $this;
+    }
+    public function getGoogleId(): ?string
+    {
+        return $this->googleId;
+    }
+
+    public function setGoogleId(?string $googleId): self
+    {
+        $this->googleId = $googleId;
+
+        return $this;
+    }
+    public function getFacebookId(): ?string
+    {
+        return $this->facebookId;
+    }
+
+    public function setFacebookId(?string $facebookId): self
+    {
+        $this->facebookId = $facebookId;
 
         return $this;
     }

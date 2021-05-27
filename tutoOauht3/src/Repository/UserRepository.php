@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use League\OAuth2\Client\Provider\GenericResourceOwner;
 use League\OAuth2\Client\Provider\GithubResourceOwner;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
@@ -38,13 +39,14 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->_em->flush();
     }
 
-    public  function findOrCreateFromGithubOauth(GithubResourceOwner $owner) :User{
+    public function findOrCreateFromGithubOauth(GithubResourceOwner $owner): User
+    {
         $user = $this->createQueryBuilder('u')
             ->where('u.githubId = :githubId')
             ->setParameters(['githubId' => $owner->getId()])
             ->getQuery()
             ->getOneOrNullResult();
-        if($user){
+        if ($user) {
             return $user;
         }
 
@@ -56,6 +58,67 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $em->persist($user);
         $em->flush();
 
+        return $user;
+    }
+
+    public function findOrCreateFromOauth(ResourceOwnerInterface $owner, string $service): User
+    {
+        $user = $this->createQueryBuilder('u')
+            ->where('u.githubId = :githubId')
+            ->orWhere('u.googleId = :googleId')
+            ->orWhere('u.facebookId = :facebookId')
+            ->setParameters(['githubId' => $owner->getId(), 'googleId' => $owner->getId(), 'facebookId' => $owner->getId()])
+            ->getQuery()
+            ->getOneOrNullResult();
+        if ($user) {
+            dd($owner);
+            return $user;
+        }
+
+
+        $user = $this->createQueryBuilder('u')
+            ->where('u.email = :email')
+            ->setParameters(['email' => $owner->getEmail()])
+            ->getQuery()
+            ->getOneOrNullResult();
+        if ($user) {
+            if ($service == 'github') {
+                $user->setGithubId($owner->getId());
+            }
+            if ($service == 'google') {
+                $user->setGoogleId($owner->getId());
+            }
+            if ($service == 'facebook') {
+                $user->setFacebookId($owner->getId());
+            }
+            dd($user);
+            $em = $this->getEntityManager();
+            $em->persist($user);
+            $em->flush();
+            return $user;
+        }
+
+        if ($service == 'github') {
+            $user = (new User())
+                ->setRoles(['ROLE_USER'])
+                ->setGithubId($owner->getId())
+                ->setEmail($owner->getEmail());
+        }
+        if ($service == 'google') {
+            $user = (new User())
+                ->setRoles(['ROLE_USER'])
+                ->setGoogleId($owner->getId())
+                ->setEmail($owner->getEmail());
+        }
+        if ($service == 'facebook') {
+            $user = (new User())
+                ->setRoles(['ROLE_USER'])
+                ->setFacebookId($owner->getId())
+                ->setEmail($owner->getEmail());
+        }
+        $em = $this->getEntityManager();
+        $em->persist($user);
+        $em->flush();
         return $user;
     }
 }
