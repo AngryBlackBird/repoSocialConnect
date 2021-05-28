@@ -23,7 +23,6 @@ security:
                 authenticators:
                     - App\Security\AppAuthenticator
                     - App\Security\SocialConnectAuthenticator
-                    - App\Security\GithubAuthenticator
 
             logout:
                 path: app_logout
